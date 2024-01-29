@@ -7,7 +7,7 @@ Patterns for accessing external resources from Times Square notebooks
    Times Square is a Rubin Science Platform application that publishes parameterized Jupyter Notebooks.
    One application is to generate reports that aggregate information from external sources.
    Since Times Square sources Jupyter Notebooks from public GitHub repositories, authors can't embed API tokens.
-   For some types of data access, it's necessary to create API proxy services that  effectively exchange a Gafaelfawr token in the notebook environment to access the external resource.
+   For some types of data access, it's necessary to create API proxy services that effectively exchange a Gafaelfawr token for access to an external service.
    This technote discusses a realization of this pattern, the `Jira Data Proxy`_ service.
 
 Introduction
@@ -15,14 +15,14 @@ Introduction
 
 Times Square is a Rubin Science Platform application that publishes parameterized Jupyter Notebooks.
 The notebooks are computed using the same type of Nublado JupyterLab servers that users work on.
-For more information about Times Square's design, see :sqr:`062`.
+For more information about Times Square's design, see :sqr:`062` :cite:`SQR-062`.
 
-An application of Times Square is to generate and host reports that aggregate information from multiple sources, transform that data, and output customized text, tables, and figures.
+An application of Times Square is to generate and host reports that aggregate information from multiple sources, transform that data, and output customized text, tables, and figures (:sqr:`084`).
 An example is a night observing report that aggregates information from the Engineering Facilities Database (EFD), narrativelog, exposurelog, and Jira system issue reports.
 These external services generally require authentication.
 
 In a user's JupyterLab, an author can get by with referring to a secrets file located in private storage for API keys.
-Times Square notebooks generally can't follow this pattern because they run in Nublado JupyterLab servers under generic bot accounts (see the Noteburst design, :sqr:`065`).
+Times Square notebooks generally can't follow this pattern because they run in Nublado JupyterLab servers under generic bot accounts (see the Noteburst design, :sqr:`065`, :cite:`SQR-065`).
 Any storage accessible to Times Square notebooks must be accessible to any Notebook Aspect user in that Science Platform environment.
 Running under a generic JupyterLab account simplifies the design of Noteburst, but also improves the accessibility of authoring Times Square notebooks because it guarantees that anyone can open a Times Square notebook in their own Nublado JuptyerLab server, make edits, and execute the notebook.
 
@@ -54,7 +54,7 @@ Essentially Segwarides provides anonymous read access to InfluxDB databases:
 APIs that require Science Platform tokens
 -----------------------------------------
 
-To use APIs within the same Science Platform environment (e.g., narrativelog, exposurelog), clients need Gafaelfawr token for bearer authorization.
+To use APIs within the same Science Platform environment (e.g., narrativelog_, exposurelog_), clients need a Gafaelfawr token for bearer authorization.
 The ``lsst.rsp.get_access_token()`` function provides this token for users:
 
 .. code-block:: python
@@ -74,10 +74,8 @@ Proxying third-party APIs
 
 Third-party APIs present special challenges because they require API keys that we generally don't want to make widely available.
 Consider Jira.
-We cannot include a Jira API key in either the general notebook environment or through a service like Segwarides because these keys represent a specific user and provide read and write access to Jira data.\ [#]_
+We cannot include a Jira API key in either the general notebook environment or through a service like Segwarides because these keys represent a specific user and provide read and write access to Jira data.
 We need to both provide access to the Jira API only from the Nublado JupyterLab notebook environment, and also ensure that the access is read-only.
-
-.. [#] Other services like GitHub provide fine-grained access control in tokens. Such tokens could be safe to serve to users from a Gafealfawr secured service, similar to Segwarides.
 
 The solution we have developed is to create a proxy API that users access with a Gafaelfawr Rubin Science Platform token:
 
@@ -108,7 +106,7 @@ A proxy service is simple to implement.
 Below is a snippet of a proxy's handler function in FastAPI:
 
 .. code-block:: python
-
+   :caption: Handler module from Jira Data Proxy
 
    from urllib.parse import urlencode, urljoin
    
@@ -192,5 +190,12 @@ For Rubin's Jira, we have deployed the `Jira Data Proxy`_ service to the USDF Ru
 Finally, some third-party APIs can be accessed directly with a shared read-only API key.
 This pattern is not yet implemented, but could be done by modifying Segwarides_ to run behind the Rubin Science Platform's authentication.
 
+References
+==========
+
+.. bibliography::
+
 .. _`Jira Data Proxy`: https://github.com/lsst-sqre/jira-data-proxy
 .. _Segwarides: https://github.com/lsst-sqre/segwarides
+.. _narrativelog: https://github.com/lsst-sqre/narrativelog
+.. _exposurelog: https://github.com/lsst-sqre/exposurelog
